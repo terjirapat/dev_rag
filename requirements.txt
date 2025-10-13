@@ -1,11 +1,6 @@
-# requests
-# transformers
 ollama
 pymupdf
-# pinecone
-langchain
-pyyaml
+# pyyaml
 chromadb
-# openai
-sentence_transformers
-google-generativeai
+# google-generativeai
+ipykernel

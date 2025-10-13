@@ -1,52 +1,60 @@
-import ollama
+from typing import Any, Dict, List
+import httpx
+from .base import BaseLLM, BaseEmbedding
 
-def initialize_conversation():
-    """
-    Initialize the conversation with a system prompt.
+class OllamaChat(BaseLLM):
+    def __init__(
+            self, 
+            model_name: str = "qwen3:8b",
+            temperature: float = 0,
+            base_url: str = "http://localhost:11434"
+    ):
+        self.model_name = model_name
+        self.temperature = temperature
+        
+        self.base_url = base_url
 
-    Returns:
-        list: A list containing the initial system message for the conversation history.
-    """
-    return [{"role": "system", "content": "You are a helpful assistant."}]
+    def UserMessage(self, text: str, **kwargs) -> Dict[str, Any]:
+        return {"role": "user", "content": text}
 
-def get_user_input():
-    """
-    Prompt the user for input.
+    def AIMessage(self, text: str) -> Dict[str, Any]:
+        return {"role": "assistant", "content": text}
 
-    Returns:
-        str: The user input as a string.
-    """
-    return input(">>> ")
+    def SystemMessage(self, text: str) -> Dict[str, Any]:
+        return {"role": "system", "content": text}
 
-def generate_response(messages):
-    """
-    Send the conversation history to the Llama 3 model and return the assistant's reply.
+    def run(self, system_prompt: str, messages: List[Dict[str, Any]]) -> str:
+        all_messages = [self.SystemMessage(system_prompt)] + messages
+        
+        response = httpx.post(f'{self.base_url}/api/chat', json={
+            "model": self.model_name,
+            "messages": all_messages,
+            "stream": False,
+            "options": {"temperature": self.temperature}
+        }, timeout=None
+        )
+        
+        return response.json()['message']['content']
 
-    Args:
-        messages (list): The list of all messages in the conversation so far.
+class OllamaEmbedding(BaseEmbedding):
+    def __init__(
+            self,
+            model_name: str = "nomic-embed-text:v1.5",
+            base_url: str = "http://localhost:11434"
+    ):
+        self.model_name = model_name
+        self.base_url = base_url
 
-    Returns:
-        str: The assistant's reply.
-    """
-    response = ollama.chat(model="llama3", messages=messages)
-    assistant_reply = response["message"]["content"]
-    print("Assistant:", assistant_reply)
-    return assistant_reply
+    def embed_text(self, text: str) -> List[float]:
+        response = httpx.post(f'{self.base_url}/api/embed', json={
+            "model": self.model_name,
+            "input": text
+        })
+        return response.json()['embeddings'][0]
 
-def chat_loop():
-    """
-    Run the main chat loop. Continues until the user types 'exit'.
-
-    This function handles input/output and maintains the conversation state.
-    """
-    messages = initialize_conversation()
-
-    while True:
-        user_input = get_user_input()
-        if user_input.strip().lower() == "exit":
-            print("Goodbye!")
-            break
-
-        messages.append({"role": "user", "content": user_input})
-        assistant_reply = generate_response(messages)
-        messages.append({"role": "assistant", "content": assistant_reply})
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
+        response = httpx.post(f'{self.base_url}/api/embed', json={
+            "model": self.model_name,
+            "input": texts
+        })
+        return response.json()['embeddings']
