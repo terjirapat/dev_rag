@@ -42,8 +42,10 @@ Below is the step-by-step flow of how the RAG pipeline works:
    - The retrieved text and the user’s question are combined into a single prompt.
    - Example system prompt:
      ```
-     Answer the following question using ONLY the provided context.
-     If the answer cannot be found in the context, say "I don't know".
+      Instructions:
+      - Use the context text to answer the question as accurately as possible.
+      - If the context does not contain enough information, say: "I don't have enough information from the context."
+      - Do not include outside knowledge or assumptions.
      ```
 
 5. **Answer Generation**
