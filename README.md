@@ -50,4 +50,6 @@ Below is the step-by-step flow of how the RAG pipeline works:
 
 5. **Answer Generation**
    - The LLM (Llama 3.2) generates a grounded response using the provided context.
+  
+terrrr
 
